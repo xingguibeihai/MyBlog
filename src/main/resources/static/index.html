@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的个人博客 - 发现精彩世界</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg: #f8f9fa;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* 顶部导航栏 - 毛玻璃效果 */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 10%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        #logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .auth-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 15px;
+            transition: color 0.3s;
+        }
+
+        .auth-links a:hover { color: var(--primary); }
+
+        .user-info-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn {
+            color: #e53e3e !important;
+            font-size: 14px;
+            border: 1px solid #fed7d7;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* 主体布局 */
+        .main-container {
+            max-width: 850px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* 发布文章卡片 */
+        .create-post-section {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        .create-post-section h3 { margin-top: 0; color: var(--primary); }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* 媒体上传条 */
+        .media-upload-section {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px dashed #cbd5e0;
+            margin-bottom: 20px;
+        }
+
+        .upload-controls { display: flex; gap: 10px; align-items: center; }
+
+        .btn-grad {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-grad:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        /* 搜索框 */
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        /* 文章卡片 */
+        .post-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .post-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .post-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .post-meta {
+            font-size: 14px;
+            color: var(--text-light);
+            margin: 10px 0 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .post-body { font-size: 16px; color: #4a5568; line-height: 1.8; }
+        .post-body img { max-width: 100%; border-radius: 12px; margin: 15px 0; }
+
+        /* 评论区美化 */
+        .comments-section {
+            margin-top: 30px;
+            background: #fdfdfd;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .comment-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border-left: 4px solid var(--primary);
+        }
+
+        .comment-meta { font-size: 13px; color: var(--text-light); margin-bottom: 8px; }
+
+        .del-btn {
+            background: #fff5f5;
+            color: #e53e3e;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* 分页器 */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+            padding-bottom: 50px;
+        }
+
+        .page-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: var(--white);
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .page-btn:disabled { color: #cbd5e0; cursor: not-allowed; }
+
+        .loading { text-align: center; font-style: italic; color: var(--text-light); }
+    </style>
+</head>
+<body onload="checkLoginStatus(); loadPosts(0);">
+
+<div class="navbar">
+    <div id="logo">MyBlog.</div>
+    <div id="authSection" class="auth-links">
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="create-post-section">
+        <h3>📝 记录新瞬间</h3>
+        <form id="createPostForm">
+            <input type="text" id="title" placeholder="给文章起一个响亮的标题..." required>
+            <textarea id="body" rows="5" placeholder="支持 Markdown 语法，分享你的精彩故事..." required></textarea>
+
+            <div id="bodyPreview" style="display: none; border: 1px solid #edf2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fffcf5;">
+                <small style="color: var(--primary); font-weight: bold;">实时预览：</small>
+                <div id="previewContent" class="post-body"></div>
+            </div>
+
+            <div class="media-upload-section">
+                <div class="upload-controls">
+                    <input type="file" id="mediaFile" accept="image/*,video/*" style="margin-bottom:0">
+                    <button type="button" onclick="uploadMedia()" class="btn-grad" style="padding: 8px 15px; font-size: 13px;">上传素材</button>
+                </div>
+                <div id="uploadStatus" style="font-size: 12px; margin-top: 8px;"></div>
+            </div>
+
+            <input type="text" id="author" readonly style="background: #f7fafc; color: #a0aec0; font-size: 13px;">
+            <button type="submit" class="btn-grad" style="width: 100%;">发布文章</button>
+        </form>
+    </div>
+
+    <div class="search-section">
+        <input type="text" id="searchKeyword" placeholder="搜索文章标题或关键词..." style="margin-bottom:0">
+        <button onclick="performSearch()" class="btn-grad">搜索</button>
+    </div>
+
+    <div id="postsContainer">
+        <div class="loading">正在加载精彩内容...</div>
+    </div>
+
+    <div id="paginationControls" class="pagination-container"></div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api/content';
+    const MEDIA_UPLOAD_URL = 'http://localhost:8080/api/media/upload'; // 媒体上传URL
+    let currentPage = 0;
+    const pageSize = 10;
+    const sortBy = 'publishedAt';
+    const sortDir = 'desc';
+    let currentKeyword = '';
+    const currentUsername = localStorage.getItem('blogUsername');
+
+    // --- 辅助函数：防 XSS 转义 ---
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.toString().replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // --- 辅助函数：检查401，并强制用户重新登录 ---
+    function checkTokenAndReload(response) {
+        if (response.status === 401) {
+            localStorage.removeItem('blogToken');
+            localStorage.removeItem('blogUsername');
+            localStorage.removeItem('blogRoles'); // 统一移除 'blogRoles'
+            alert('登录已过期或无效，请重新登录。');
+            window.location.href = 'login.html'; // 强制跳转到登录页
+
+            console.error("401 Unauthorized 错误发生。Token 已过期或无效。");
+            return true; // 阻止后续 .then() 或 .catch(HTTP error) 执行
+        }
+        return false;
+    }
+    // --- 初始化检查：检查用户是否登录 ---
+    function checkLoginStatus() {
+        const token = localStorage.getItem('blogToken');
+        const username = localStorage.getItem('blogUsername');
+        const authSection = document.getElementById('authSection');
+        const authorInput = document.getElementById('author');
+
+        if (token && username) {
+            authSection.innerHTML = `
+                <span class="user-info">欢迎, ${escapeHtml(username)}</span>
+                <a class="logout-btn" onclick="logout()">[退出]</a>
+            `;
+            authorInput.value = username;
+        } else {
+            authSection.innerHTML = `<a href="login.html">去登录</a> | <a href="register.html">注册</a>`;
+            authorInput.value = "请先登录";
+            authorInput.style.color = "red";
+        }
+    }
+
+    // --- 功能 A: 退出登录 ---
+    function logout() {
+        if(confirm("确定要退出登录吗？")) {
+            localStorage.removeItem('blogToken');
+            localStorage.removeItem('blogUsername');
+            localStorage.removeItem('blogRoles'); // 统一使用 'blogRoles' 键名
+            window.location.reload();
+        }
+    }
+
+    // --- 功能 B: 加载并显示所有文章 (集成评论容器) ---
+    function loadPosts(pageNo = currentPage) {
+        currentPage = pageNo;
+
+        // 🌟 修复点 1: 解析存储在 localStorage 中的 JSON 角色数组
+        const storedRolesJson = localStorage.getItem('blogRoles');
+        let isAdmin = false;
+
+        if (storedRolesJson) {
+            try {
+                // 尝试将存储的 JSON 字符串解析为数组 (例如: '["ROLE_ADMIN"]')
+                const userRoles = JSON.parse(storedRolesJson);
+                // 检查数组中是否包含 'ROLE_ADMIN' 字符串
+                isAdmin = Array.isArray(userRoles) && userRoles.includes('ROLE_ADMIN');
+            } catch (e) {
+                console.error("解析用户角色 JSON 失败 (loadPosts):", e);
+                isAdmin = false;
+            }
+        }
+        // -----------------------------------------------------
+
+        document.getElementById('postsContainer').innerHTML = '<div class="loading">正在加载文章...</div>';
+
+        let fetchUrl = `${API_URL}?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
+        if (currentKeyword) {
+            fetchUrl += `&keyword=${encodeURIComponent(currentKeyword)}`;
+        }
+
+        fetch(fetchUrl)
+            .then(response => {
+                if (!response.ok) {
+                    // 尽管是 GET 请求，也增加 401 检查
+                    checkTokenAndReload(response);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(contentResponse => {
+                const container = document.getElementById('postsContainer');
+                container.innerHTML = '';
+
+                const posts = contentResponse.content;
+
+                if (!posts || posts.length === 0) {
+                    const message = currentKeyword ?
+                        `找不到包含 "${escapeHtml(currentKeyword)}" 的文章。` :
+                        '暂时还没有文章，快来发布第一篇吧！';
+
+                    container.innerHTML = `<div class="loading">${message}</div>`;
+                    document.getElementById('paginationControls').innerHTML = '';
+                    return;
+                }
+
+                // 渲染文章列表
+                posts.forEach(post => {
+                    let deleteButton = '';
+
+                    // 🌟 修复点 2: 使用 isAdmin 变量进行权限判断 🌟
+                    if (isAdmin || (currentUsername === post.author)) {
+                        deleteButton = `<button
+                                        onclick="deletePost(${post.id}, '${escapeHtml(post.title)}')"
+                                        style="float:right; background-color: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                        删除
+                                    </button>`;
+                    }
+
+                    const renderedBody = marked.parse(post.body || '');
+
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'post-card';
+                    postDiv.id = `post-${post.id}`; // 🌟 关键修复：添加文章卡片的唯一 ID 🌟
+                    postDiv.innerHTML = `
+                        <div class="post-title">${escapeHtml(post.title)} ${deleteButton}</div>
+                        <div class="post-meta">
+                            <span>👤 ${escapeHtml(post.author)}</span> &nbsp;|&nbsp;
+                            <span>🕒 ${new Date(post.publishedAt).toLocaleString()}</span>
+                        </div>
+                        <div class="post-body">${renderedBody}</div>
+
+                        <div class="comments-section">
+                            <h4 id="commentCountDisplay-${post.id}">💬 评论 (${post.commentCount || 0})</h4>
+
+                            ${currentUsername ? `
+                                <div class="comment-form">
+                                    <textarea id="commentBody-${post.id}"
+                                        rows="3"
+                                        placeholder="发表你的评论 (支持 Markdown: 图片、视频或文字)..."
+                                        required></textarea>
+                                    <button onclick="submitComment(${post.id})" class="publish-btn" style="width: auto; padding: 5px 15px; margin-bottom: 10px; background-color: #5cb85c;">发表</button>
+                                </div>
+                            ` : `<p style="color: #e74c3c;">登录后才能发表评论。</p>`}
+
+                            <div id="commentsContainer-${post.id}">
+                                <div class="loading" style="font-size: 0.9em;">正在加载评论...</div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(postDiv);
+
+                    // 加载该文章的评论
+                    loadComments(post.id);
+                });
+
+                renderPagination(contentResponse);
+            })
+            .catch(error => {
+                console.error('加载失败:', error);
+                document.getElementById('postsContainer').innerHTML = '<div class="loading" style="color:red">加载失败，请检查后端服务或网络连接。</div>';
+                document.getElementById('paginationControls').innerHTML = '';
+            });
+    }
+
+    // --- 功能 C: 分页导航渲染 (不变) ---
+    function renderPagination(response) {
+        const controls = document.getElementById('paginationControls');
+        controls.innerHTML = '';
+
+        if (response.totalPages <= 1) return;
+
+        const totalPages = response.totalPages;
+        const pageNo = response.pageNo;
+
+        controls.innerHTML += `<button class="pagination-btn" onclick="loadPosts(${pageNo - 1})" ${pageNo === 0 ? 'disabled' : ''}>上一页</button>`;
+        controls.innerHTML += `<span class="pagination-info">第 ${pageNo + 1} 页 / 共 ${totalPages} 页</span>`;
+        controls.innerHTML += `<button class="pagination-btn" onclick="loadPosts(${pageNo + 1})" ${response.last ? 'disabled' : ''}>下一页</button>`;
+    }
+
+    // --- 功能 D: 搜索触发器 (不变) ---
+    function performSearch() {
+        const keywordInput = document.getElementById('searchKeyword').value;
+        currentKeyword = keywordInput.trim();
+        loadPosts(0);
+    }
+
+    // --- 💡 关键修改 E: 提交新文章 ---
+    document.getElementById('createPostForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能发布文章！');
+            return;
+        }
+
+        const title = document.getElementById('title').value;
+        const body = document.getElementById('body').value;
+        const author = document.getElementById('author').value;
+
+        if (!title || !body) {
+            alert('标题和内容不能为空。');
+            return;
+        }
+
+        const formData = { title, body, author };
+
+        fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(async response => {
+                // 检查 401 错误
+                if (checkTokenAndReload(response)) return;
+
+                if (!response.ok) {
+                    // 尝试读取响应体，提供详细错误信息
+                    let errorMessage = await response.text();
+                    throw new Error(`发布失败: ${response.status} - ${errorMessage}`);
+                }
+                return response.json();
+            })
+            .then(() => {
+                // 成功后清空表单并刷新文章列表
+                alert('文章发布成功！');
+                document.getElementById('createPostForm').reset();
+                loadPosts(0);
+            })
+            .catch(error => {
+                console.error('发布文章错误:', error);
+                alert('文章发布失败: ' + error.message);
+            });
+    });
+
+    // --- 功能 F: 删除文章 (新增权限检查提示) ---
+    function deletePost(postId, postTitle) {
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能删除文章！');
+            return;
+        }
+
+        if (confirm(`确定要删除文章: "${postTitle}" 吗？`)) {
+            fetch(`${API_URL}/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+                .then(async response => {
+                    // 检查 401 错误
+                    if (checkTokenAndReload(response)) return;
+
+                    if (response.status === 204) {
+                        alert('文章删除成功！');
+                        loadPosts(currentPage); // 刷新列表
+                    } else if (response.status === 403) {
+                        // 后端返回 403 (FORBIDDEN) 时，显示权限错误
+                        alert('删除失败: 您没有权限删除该文章。');
+                    } else {
+                        let errorMsg = await response.text();
+                        throw new Error(errorMsg || `删除失败，状态码: ${response.status}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('删除文章失败:', error);
+                    alert('删除失败: ' + error.message);
+                });
+        }
+    }
+
+    // --- 功能 G: 媒体文件上传 (不变) ---
+    function uploadMedia() {
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能上传文件！');
+            return;
+        }
+
+        const fileInput = document.getElementById('mediaFile');
+        const file = fileInput.files[0];
+        const statusDiv = document.getElementById('uploadStatus');
+
+        if (!file) {
+            statusDiv.textContent = '请选择一个文件。';
+            return;
+        }
+
+        statusDiv.textContent = '正在上传...';
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch(MEDIA_UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+        })
+            .then(response => {
+                if (checkTokenAndReload(response)) return;
+                if (!response.ok) throw new Error('上传失败');
+                return response.json();
+            })
+            .then(mediaResponse => {
+                // 🌟 修复点：直接读取后端生成的完整访问 URL
+                const mediaUrl = mediaResponse.fileDownloadUri;
+
+                if (!mediaUrl) {
+                    throw new Error("后端响应中缺少 fileDownloadUri 字段");
+                }
+
+                statusDiv.textContent = '上传成功！';
+                statusDiv.style.color = 'green';
+
+                // 构造 Markdown 链接插入编辑器
+                const markdownLink = `![${file.name}](${mediaUrl})`;
+                const bodyTextarea = document.getElementById('body');
+
+                // 插入并换行
+                bodyTextarea.value += `\n${markdownLink}\n`;
+
+                // 🌟 触发 input 事件以触发实时预览（如果有的话）
+                bodyTextarea.dispatchEvent(new Event('input'));
+
+                fileInput.value = '';
+            })
+            .catch(error => {
+                console.error('上传错误:', error);
+                statusDiv.textContent = '上传失败: ' + error.message;
+                statusDiv.style.color = 'red';
+            });
+    }
+
+
+    // ========================================================================
+    // --- 评论功能 (不变) ---
+    // ========================================================================
+
+    // --- 新增辅助函数：渲染单个评论卡片并插入 DOM ---
+    // --- H. 渲染单个评论卡片 (新增删除按钮和 contentId 存储) ---
+    function renderSingleComment(comment, contentId, prepend = true) {
+        const container = document.getElementById(`commentsContainer-${contentId}`);
+        if (!container) return;
+
+        // 如果容器内只有“还没有人评论”的提示，先清空它
+        if (container.children.length === 1 && container.children[0].tagName === 'P' && container.children[0].textContent.includes('还没有人评论')) {
+            container.innerHTML = '';
+        }
+
+        if (!comment.id || !comment.author || !comment.body) {
+            console.error("警告: 评论对象缺少关键字段 (id/author/body)。", comment);
+            return;
+        }
+
+        const currentUsername = localStorage.getItem('blogUsername');
+        const storedRolesJson = localStorage.getItem('blogRoles');
+        let isAdmin = false;
+        if (storedRolesJson) {
+            try {
+                const userRoles = JSON.parse(storedRolesJson);
+                isAdmin = Array.isArray(userRoles) && userRoles.includes('ROLE_ADMIN');
+            } catch (e) {
+                console.error("解析用户角色 JSON 失败 (renderSingleComment):", e);
+            }
+        }
+
+        // 权限判断：是作者或管理员
+        const canEditOrDelete = currentUsername && (currentUsername === comment.author || isAdmin);
+        const renderedCommentBody = marked.parse(comment.body || '');
+
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment-card';
+        commentDiv.id = `comment-${comment.id}`;
+
+        // 存储 contentId
+        commentDiv.setAttribute('data-content-id', contentId);
+
+        let actionButtons = '';
+        if (canEditOrDelete) {
+            // 🌟 关键修改：添加删除按钮，并确保在 actionsDiv 内部 🌟
+            actionButtons = `<div class="comment-actions" id="commentActions-${comment.id}">
+                <button class="edit-btn" onclick="enableCommentEdit(${comment.id})">编辑</button>
+                <button class="delete-btn-comment" onclick="deleteCommentById(${contentId}, ${comment.id})">删除</button>
+            </div>`;
+        }
+
+
+        commentDiv.innerHTML = `
+            <div class="comment-meta">
+                <span>${escapeHtml(comment.author)}</span>
+                于 ${new Date(comment.publishedAt).toLocaleString()} 评论
+            </div>
+            <div class="comment-body" id="commentBodyDisplay-${comment.id}">${renderedCommentBody}</div>
+            <textarea id="commentBodyEdit-${comment.id}"
+                    style="display:none; width:100%;"
+                    rows="3">${escapeHtml(comment.body)}</textarea>
+            ${actionButtons}
+        `;
+
+        if (prepend) {
+            container.prepend(commentDiv);
+        } else {
+            container.appendChild(commentDiv);
+        }
+    }
+
+
+    // H. 加载和渲染评论 (已修复：使用 renderSingleComment)
+    function loadComments(contentId) {
+        const container = document.getElementById(`commentsContainer-${contentId}`);
+        if (!container) {
+            console.error(`ERROR: 无法找到文章ID ${contentId} 的评论容器.`);
+            return;
+        }
+
+        container.innerHTML = '<div class="loading" style="font-size: 0.9em;">正在加载评论...</div>';
+
+        fetch(`${API_URL}/${contentId}/comments`)
+            .then(response => {
+                if (response.status === 401) {
+                    container.innerHTML = '<p style="color: #f39c12; font-size: 0.9em;">加载评论时认证失败，请检查登录状态。</p>';
+                    return null;
+                }
+                if (!response.ok) {
+                    throw new Error("加载评论失败");
+                }
+                return response.json();
+            })
+            .then(comments => {
+                if (comments === null) return;
+
+                container.innerHTML = '';
+
+                if (!Array.isArray(comments) || comments.length === 0) {
+                    container.innerHTML = '<p style="font-size: 0.9em; color: #777;">还没有人评论，快来抢沙发吧！</p>';
+                    return;
+                }
+
+                comments.forEach(comment => {
+                    renderSingleComment(comment, contentId, false);
+                });
+            })
+            .catch(error => {
+                console.error("加载评论失败:", error);
+                container.innerHTML = '<p style="color: red; font-size: 0.9em;">评论加载出错。</p>';
+            });
+    }
+
+
+    // I. 提交新评论
+    function submitComment(contentId) {
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能发表评论！');
+            return;
+        }
+
+        const commentBodyInput = document.getElementById(`commentBody-${contentId}`);
+        const body = commentBodyInput.value.trim();
+        if (!body) {
+            alert('评论内容不能为空。');
+            return;
+        }
+
+        const formData = { body: body };
+
+        fetch(`${API_URL}/${contentId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(async response => {
+                if (checkTokenAndReload(response)) return;
+
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    let errorMessage = `发表评论失败，状态码: ${response.status}`;
+                    try {
+                        const errorJson = await response.json();
+                        errorMessage = errorJson.message || errorJson.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = await response.text() || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+            })
+            .then((newComment) => {
+                if (!newComment || !newComment.id) {
+                    throw new Error("后端返回的评论数据无效或缺少 ID。");
+                }
+
+                commentBodyInput.value = '';
+
+                // 1. 将新评论对象插入到列表顶部 (true = prepend)
+                renderSingleComment(newComment, contentId, true);
+
+                // 🌟 修复点 1: 成功提交评论后，调用辅助函数更新评论计数 🌟
+                refreshPostCommentCount(contentId);
+            })
+            .catch(error => {
+                console.error('发表评论错误:', error);
+                alert('发表评论失败: ' + error.message);
+            });
+    }
+
+
+    // J. 启用评论编辑模式 (不变)
+    function enableCommentEdit(commentId) {
+        const displayDiv = document.getElementById(`commentBodyDisplay-${commentId}`);
+        const editArea = document.getElementById(`commentBodyEdit-${commentId}`);
+        const actionsDiv = document.getElementById(`commentActions-${commentId}`);
+
+        displayDiv.style.display = 'none';
+        editArea.style.display = 'block';
+
+        actionsDiv.innerHTML = `
+            <button class="save-btn" onclick="saveCommentEdit(${commentId})">保存</button>
+            <button class="cancel-btn" onclick="cancelCommentEdit(${commentId})">取消</button>
+        `;
+    }
+
+    // K. 取消评论编辑模式 (不变)
+    function cancelCommentEdit(commentId) {
+        const displayDiv = document.getElementById(`commentBodyDisplay-${commentId}`);
+        const editArea = document.getElementById(`commentBodyEdit-${commentId}`);
+        const actionsDiv = document.getElementById(`commentActions-${commentId}`);
+
+        displayDiv.style.display = 'block';
+        editArea.style.display = 'none';
+
+        actionsDiv.innerHTML = `<button class="edit-btn" onclick="enableCommentEdit(${commentId})">编辑</button>`;
+    }
+
+    // L. 保存评论编辑 (增加 401 检查)
+    // --- M. 保存评论编辑 (修复：使用存储在 DOM 上的 contentId) ---
+    function saveCommentEdit(commentId) {
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能编辑评论！');
+            return;
+        }
+
+        const editArea = document.getElementById(`commentBodyEdit-${commentId}`);
+        const newBody = editArea.value.trim();
+
+        if (!newBody) {
+            alert('评论内容不能为空。');
+            return;
+        }
+
+        // 🌟 关键修复点：从评论卡片中获取 data-content-id 🌟
+        const commentElement = document.getElementById(`comment-${commentId}`);
+        // 使用 getAttribute 安全地读取存储的文章 ID
+        const contentId = commentElement?.getAttribute('data-content-id');
+
+        if (!contentId) {
+            // 如果获取不到，则弹窗提示（但现在应该能获取到了）
+            alert('编辑失败：无法确定评论所属的文章ID。');
+            return;
+        }
+
+        const commentDto = { body: newBody };
+
+        fetch(`${API_URL}/${contentId}/comments/${commentId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(commentDto)
+        })
+            .then(async response => {
+                if (checkTokenAndReload(response)) return;
+
+                if (response.status === 403) {
+                    throw new Error("您无权编辑该评论！");
+                }
+
+                if (!response.ok) {
+                    let errorMessage = await response.text();
+                    throw new Error(errorMessage || `编辑失败，状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(updatedComment => {
+                // 成功后，刷新该文章的评论列表以更新内容并恢复按钮状态
+                loadComments(parseInt(contentId));
+
+                // 确保文章计数器也刷新（以防万一后端在编辑时更新了其他文章元数据）
+                refreshPostCommentCount(contentId);
+
+                alert('评论编辑成功！');
+            })
+            .catch(error => {
+                console.error('保存编辑失败:', error);
+                alert('保存编辑失败: ' + error.message);
+            });
+    }
+
+    // --- N. 删除评论 (新增：传入 contentId) ---
+    function deleteCommentById(contentId, commentId) {
+        const token = localStorage.getItem('blogToken');
+        if (!token) {
+            alert('请先登录才能删除评论！');
+            return;
+        }
+
+        if (confirm("确定要删除这条评论吗？")) {
+            fetch(`${API_URL}/${contentId}/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+                .then(async response => {
+                    if (checkTokenAndReload(response)) return;
+
+                    if (response.status === 204) {
+                        alert('评论删除成功！');
+
+                        // 1. 手动移除被删除的评论元素
+                        const deletedCommentElement = document.getElementById(`comment-${commentId}`);
+                        if (deletedCommentElement) {
+                            deletedCommentElement.remove();
+                        }
+
+                        // 2. 🌟 修复点 2: 成功删除评论后，调用辅助函数更新评论计数 🌟
+                        refreshPostCommentCount(contentId);
+
+                    } else if (response.status === 403) {
+                        alert('删除失败: 您没有权限删除该评论。');
+                    } else {
+                        let errorMsg = await response.text();
+                        throw new Error(errorMsg || `删除失败，状态码: ${response.status}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('删除评论失败:', error);
+                    alert('删除评论失败: ' + error.message);
+                });
+        }
+    }
+
+    // --- O. 辅助函数：加载并更新单个文章的评论计数 ---
+    // 假设您的文章卡片中，显示评论数量的元素ID为 commentCountDisplay-{contentId}
+    async function refreshPostCommentCount(contentId) {
+        try {
+            // 1. 从后端获取该文章的最新数据
+            const response = await fetch(`${API_URL}/${contentId}`, {
+                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('blogToken') || '') }
+            });
+            if (!response.ok) {
+                // 如果获取失败，则不进行后续更新
+                console.error('获取文章详情失败，无法更新评论计数。');
+                return;
+            }
+            const post = await response.json();
+
+            // 2. 找到文章卡片
+            const articleCard = document.getElementById(`post-${contentId}`);
+            if (!articleCard) return;
+
+            // 3. 找到显示计数的 DOM 元素
+            // 默认假设 ID 结构，这是最安全的做法
+            let countElement = document.getElementById(`commentCountDisplay-${contentId}`);
+
+            // 备用查找：如果您的文章渲染代码没有给 count 元素设置唯一ID
+            if (!countElement) {
+                // 尝试在文章卡片内查找文本包含 "评论 (" 的元素
+                const allElements = articleCard.querySelectorAll('*');
+                for (const el of allElements) {
+                    if (el.textContent.includes('评论 (')) {
+                        countElement = el;
+                        break;
+                    }
+                }
+            }
+
+            if (countElement) {
+                // 4. 使用后端返回的最新 commentCount 更新 DOM
+                const newCount = post.commentCount || 0;
+                countElement.textContent = `💬 评论 (${newCount})`;
+            }
+
+        } catch (error) {
+            console.error(`更新文章 ${contentId} 评论计数失败:`, error);
+        }
+    }
+
+    // --- 页面加载完成时执行 ---
+    // 由于 body 中已经设置了 onload="checkLoginStatus(); loadPosts(0);"，这里无需再次调用。
+
+    // --- 实时预览逻辑 ---
+    const bodyArea = document.getElementById('body');
+    const previewDiv = document.getElementById('bodyPreview');
+    const previewContent = document.getElementById('previewContent');
+
+    bodyArea.addEventListener('input', () => {
+        const previewDiv = document.getElementById('bodyPreview');
+        const previewContent = document.getElementById('previewContent');
+        if (bodyArea.value.trim()) {
+            previewDiv.style.display = 'block';
+            previewContent.innerHTML = marked.parse(bodyArea.value);
+        } else {
+            previewDiv.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
