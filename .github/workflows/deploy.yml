@@ -20,6 +20,7 @@ jobs:
           script: |
             cd /opt/MyBlog
             git pull
+            # 使用 --build 强制重新构建后端
             docker-compose up -d --build backend
             # 清理一下没用的旧镜像，节省服务器空间
             docker image prune -f
