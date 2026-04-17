@@ -33,8 +33,8 @@ jobs:
         run: |
           docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
           # 构建并打上两个标签：一个是版本号，一个是 latest
-          IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog/myblog-backend:v${{ github.run_number }}
-          IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog/myblog-backend:latest
+          IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:v${{ github.run_number }}
+          IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
           
           docker build -t $IMAGE_TAG .
           docker tag $IMAGE_TAG $IMAGE_LATEST
@@ -59,7 +59,7 @@ jobs:
             # 登录 Harbor (为了让服务器有权限拉取镜像)
             docker login 47.121.192.217:8017 -u admin -p ${{ secrets.HARBOR_PASSWORD }}
             # 强制拉取最新镜像
-            docker pull 47.121.192.217:8017/myblog/myblog-backend:latest
+            docker pull 47.121.192.217:8017/myblog-repo/myblog-backend:latest
             # 启动服务
             docker-compose up -d backend
             # 清理旧镜像
