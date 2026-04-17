@@ -2,7 +2,7 @@ name: Java CI/CD with Docker
 
 on:
   push:
-    branches: [ "main" ]  # 只有当 main 分支有提交时才触发
+    branches: [ "master" ]  # 只有当 main 分支有提交时才触发
 
 jobs:
   deploy:
