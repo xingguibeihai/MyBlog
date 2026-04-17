@@ -75,9 +75,18 @@ public class SecurityConfig {
                         // 允许所有 OPTIONS 预检请求通过
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🌟【新增】放行静态网页资源 🌟
-                        // 这行解决了浏览器直接访问服务器 IP 时被拦截的问题
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/fonts/**").permitAll()
+                        // 🌟 核心修复：放行所有的静态页面和资源 🌟
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/login.html",    // 必须显式放行 login.html
+                                "/register.html", // 必须显式放行 register.html
+                                "/favicon.ico",
+                                "/css/**",
+                                "/js/**",
+                                "/img/**",
+                                "/fonts/**"
+                        ).permitAll()
 
                         // 允许所有用户访问图片资源
                         .requestMatchers("/media/**").permitAll()
