@@ -31,36 +31,38 @@ jobs:
 
       - name: 5. 登录 Harbor 并推送镜像
         run: |
-          docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
-          # 构建并打上两个标签：一个是版本号，一个是 latest
-          IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:v${{ github.run_number }}
-          IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
+          # 修复 Dockerfile 找不到的问题：进入存放代码和 Dockerfile 的目录（按你实际情况修改）
+          # 如果你的 Dockerfile 就在根目录，这行就删掉；如果在 backend 目录，就保留这行
+          # cd backend 
+               
+               docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
           
-          docker build -t $IMAGE_TAG .
-          docker tag $IMAGE_TAG $IMAGE_LATEST
+          # 注意：中间的项目名已修改为 myblog-repo
+               IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:v${{ github.run_number }}
+               IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
+               
+               docker build -t $IMAGE_TAG .
+               docker tag $IMAGE_TAG $IMAGE_LATEST
+               
+               docker push $IMAGE_TAG
+               docker push $IMAGE_LATES
+deploy:
+  needs: build-and-push
+  runs-on: ubuntu-latest
+  steps:
+    - name: 远程 SSH 部署
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          cd /opt/MyBlog
+          git pull
+          docker login 47.121.192.217:8017 -u admin -p ${{ secrets.HARBOR_PASSWORD }}
           
-          docker push $IMAGE_TAG
-          docker push $IMAGE_LATEST
-
-  deploy:
-    needs: build-and-push # 确保推送成功后再部署
-    runs-on: ubuntu-latest
-    steps:
-      - name: 远程 SSH 部署
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /opt/MyBlog
-            # 拉取最新的配置
-            git pull
-            # 登录 Harbor (为了让服务器有权限拉取镜像)
-            docker login 47.121.192.217:8017 -u admin -p ${{ secrets.HARBOR_PASSWORD }}
-            # 强制拉取最新镜像
-            docker pull 47.121.192.217:8017/myblog-repo/myblog-backend:latest
-            # 启动服务
-            docker-compose up -d backend
-            # 清理旧镜像
-            docker image prune -f
+          # 注意：这里的拉取路径也修改为 myblog-repo
+          docker pull 47.121.192.217:8017/myblog-repo/myblog-backend:latest
+          
+          docker-compose up -d backend
+          docker image prune -f
