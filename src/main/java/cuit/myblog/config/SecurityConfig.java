@@ -75,6 +75,8 @@ public class SecurityConfig {
                         // 允许所有 OPTIONS 预检请求通过
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        .requestMatchers("/actuator/**").permitAll()
+
                         // 🌟 核心修复：放行所有的静态页面和资源 🌟
                         .requestMatchers(
                                 "/",
