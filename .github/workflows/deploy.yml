@@ -1,17 +1,52 @@
-name: Java CI/CD with Docker
+name: Java CI/CD with Docker & Harbor
 
 on:
   push:
-    branches: [ "master" ]  # 只有当 main 分支有提交时才触发
+    branches: [ "master" ]
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 1. 检出代码
         uses: actions/checkout@v4
 
-      - name: Deploy to Server via SSH
+      - name: 2. 设置 Java 环境
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: 3. Maven 编译打包
+        run: mvn clean package -DskipTests
+
+      - name: 4. 配置 Docker 信任 HTTP 仓库
+        run: |
+          sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
+          {
+            "insecure-registries": ["${{ secrets.HARBOR_URL }}"]
+          }
+          EOF'
+          sudo systemctl restart docker
+
+      - name: 5. 登录 Harbor 并推送镜像
+        run: |
+          docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+          # 构建并打上两个标签：一个是版本号，一个是 latest
+          IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog/myblog-backend:v${{ github.run_number }}
+          IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog/myblog-backend:latest
+          
+          docker build -t $IMAGE_TAG .
+          docker tag $IMAGE_TAG $IMAGE_LATEST
+          
+          docker push $IMAGE_TAG
+          docker push $IMAGE_LATEST
+
+  deploy:
+    needs: build-and-push # 确保推送成功后再部署
+    runs-on: ubuntu-latest
+    steps:
+      - name: 远程 SSH 部署
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -19,8 +54,13 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /opt/MyBlog
+            # 拉取最新的配置
             git pull
-            # 使用 --build 强制重新构建后端
-            docker-compose up -d --build backend
-            # 清理一下没用的旧镜像，节省服务器空间
+            # 登录 Harbor (为了让服务器有权限拉取镜像)
+            docker login 47.121.192.217:8017 -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+            # 强制拉取最新镜像
+            docker pull 47.121.192.217:8017/myblog/myblog-backend:latest
+            # 启动服务
+            docker-compose up -d backend
+            # 清理旧镜像
             docker image prune -f
