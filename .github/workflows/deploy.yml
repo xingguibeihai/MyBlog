@@ -1,0 +1,26 @@
+name: Java CI/CD with Docker
+
+on:
+  push:
+    branches: [ "main" ]  # 只有当 main 分支有提交时才触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /opt/MyBlog
+            git pull
+            # 使用 --build 强制重新构建后端
+            docker-compose up -d --build backend
+            # 清理一下没用的旧镜像，节省服务器空间
+            docker image prune -f
