@@ -178,7 +178,7 @@
         messageDiv.className = 'message';
         messageDiv.textContent = '⏳ 正在提交，请稍候...';
 
-        fetch('http://localhost:8080/auth/register', {
+        fetch('/auth/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

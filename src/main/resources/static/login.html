@@ -168,7 +168,7 @@
         messageDiv.className = 'message';
         messageDiv.textContent = '⏳ 正在验证身份，请稍候...';
 
-        fetch('http://localhost:8080/auth/login', {
+        fetch('/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
