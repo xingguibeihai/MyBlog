@@ -22,7 +22,6 @@ public class Comment {
     @Column(name = "body", nullable = false, columnDefinition = "TEXT")
     private String body;
 
-    // 冗余存入作者名，方便显示
     @Column(name = "author", nullable = false)
     private String author;
 
