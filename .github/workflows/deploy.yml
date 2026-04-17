@@ -2,16 +2,15 @@ name: Java CI/CD with Docker & Harbor
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ] # 只有主分支提交时触发
 
 jobs:
+  # 任务一：在 GitHub 构建并推送镜像
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: 1. 检出代码
         uses: actions/checkout@v4
-
-      # 注意：这里不需要配置 Java 环境和运行 mvn 了，因为 Dockerfile 内部会处理
 
       - name: 2. 配置 Docker 信任 HTTP 仓库
         run: |
@@ -22,58 +21,48 @@ jobs:
           EOF'
           sudo systemctl restart docker
 
-      - name: 3. 登录 Harbor 并推送镜像
+      - name: 3. 登录 Harbor 并构建推送镜像
         run: |
+          # 1. 登录
           docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+          
+          # 2. 定义变量（使用项目名 myblog-repo）
+          IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:v${{ github.run_number }}
           IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
           
-          # 直接开始构建，Dockerfile 会在容器内部完成 Maven 编译
-          docker build -t $IMAGE_LATEST .
+          # 3. 构建并打标签
+          # 如果 Dockerfile 在根目录，直接使用 .；如果在 backend 目录，请改为 cd backend && docker build ...
+          docker build -t $IMAGE_TAG .
+          docker tag $IMAGE_TAG $IMAGE_LATEST
+          
+          # 4. 推送
+          docker push $IMAGE_TAG
           docker push $IMAGE_LATEST
 
-      - name: 4. 配置 Docker 信任 HTTP 仓库
-        run: |
-          sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
-          {
-            "insecure-registries": ["${{ secrets.HARBOR_URL }}"]
-          }
-          EOF'
-          sudo systemctl restart docker
-
-      - name: 5. 登录 Harbor 并推送镜像
-        run: |
-          # 修复 Dockerfile 找不到的问题：进入存放代码和 Dockerfile 的目录（按你实际情况修改）
-          # 如果你的 Dockerfile 就在根目录，这行就删掉；如果在 backend 目录，就保留这行
-          # cd backend 
-               
-               docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
-          
-          # 注意：中间的项目名已修改为 myblog-repo
-               IMAGE_TAG=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:v${{ github.run_number }}
-               IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
-               
-               docker build -t $IMAGE_TAG .
-               docker tag $IMAGE_TAG $IMAGE_LATEST
-               
-               docker push $IMAGE_TAG
-               docker push $IMAGE_LATES
-deploy:
-  needs: build-and-push
-  runs-on: ubuntu-latest
-  steps:
-    - name: 远程 SSH 部署
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        script: |
-          cd /opt/MyBlog
-          git pull
-          docker login 47.121.192.217:8017 -u admin -p ${{ secrets.HARBOR_PASSWORD }}
-          
-          # 注意：这里的拉取路径也修改为 myblog-repo
-          docker pull 47.121.192.217:8017/myblog-repo/myblog-backend:latest
-          
-          docker-compose up -d backend
-          docker image prune -f
+  # 任务二：远程 SSH 部署（注意这里的缩进，它必须在 jobs 下面）
+  deploy:
+    needs: build-and-push # 必须等上面推送到 Harbor 成功了再执行
+    runs-on: ubuntu-latest
+    steps:
+      - name: 远程 SSH 部署
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /opt/MyBlog
+            # 同步服务器上的 docker-compose.yml 变更
+            git pull
+            
+            # 服务器登录 Harbor 以获取拉取权限
+            docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+            
+            # 强行拉取最新镜像
+            docker pull ${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
+            
+            # 重启后端服务
+            docker-compose up -d backend
+            
+            # 清理虚悬镜像（节省服务器磁盘）
+            docker image prune -f
