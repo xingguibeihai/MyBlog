@@ -11,14 +11,25 @@ jobs:
       - name: 1. 检出代码
         uses: actions/checkout@v4
 
-      - name: 2. 设置 Java 环境
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+      # 注意：这里不需要配置 Java 环境和运行 mvn 了，因为 Dockerfile 内部会处理
 
-      - name: 3. Maven 编译打包
-        run: mvn clean package -DskipTests
+      - name: 2. 配置 Docker 信任 HTTP 仓库
+        run: |
+          sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
+          {
+            "insecure-registries": ["${{ secrets.HARBOR_URL }}"]
+          }
+          EOF'
+          sudo systemctl restart docker
+
+      - name: 3. 登录 Harbor 并推送镜像
+        run: |
+          docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+          IMAGE_LATEST=${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:latest
+          
+          # 直接开始构建，Dockerfile 会在容器内部完成 Maven 编译
+          docker build -t $IMAGE_LATEST .
+          docker push $IMAGE_LATEST
 
       - name: 4. 配置 Docker 信任 HTTP 仓库
         run: |
