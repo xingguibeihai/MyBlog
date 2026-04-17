@@ -2,24 +2,22 @@ package cuit.myblog.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 获取文件夹的绝对路径（更稳妥）
-        String uploadPath = Paths.get("uploads", "blog-media").toFile().getAbsolutePath();
+    public void addViewControllers(ViewControllerRegistry registry) {
+        // 强制：当访问 / 时，转发给 /login.html
+        registry.addViewController("/").setViewName("forward:/login.html");
+    }
 
-        /**
-         * 🌟 关键映射：
-         * 前端访问 URL: http://localhost:8080/media/文件名
-         * 对应后端磁盘: ./uploads/blog-media/文件名
-         */
-        registry.addResourceHandler("/media/**")
-                .addResourceLocations("file:" + uploadPath + "/");
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 显式指定静态资源寻址路径：把所有 /** 请求映射到 jar 包内的 static 文件夹
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
     }
 }
