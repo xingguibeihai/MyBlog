@@ -88,11 +88,11 @@ public class SecurityConfig {
                                 "/fonts/**"
                         ).permitAll()
 
-                        // 允许所有用户访问图片资源
-                        .requestMatchers("/media/**").permitAll()
+// 放行媒体资源
+                                .requestMatchers("/media/**").permitAll()
 
-                        // 登录/注册接口公开
-                        .requestMatchers("/auth/**", "/api/auth/**").permitAll()
+                                // 放行认证接口
+                                .requestMatchers("/auth/**", "/api/auth/**").permitAll()
 
                         // GET 请求公开 (获取文章列表和评论列表)
                         .requestMatchers(HttpMethod.GET, "/api/content/**").permitAll()
