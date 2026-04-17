@@ -70,12 +70,16 @@ public class SecurityConfig {
                 )
 
                 // 4. 配置授权规则
+// 4. 配置授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 允许所有 OPTIONS 预检请求通过
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 🌟 关键修复：允许所有用户（包括未登录用户）访问图片资源 🌟
-                        // 这解决了浏览器加载图片时因为没有 Token 导致的 401 错误
+                        // 🌟【新增】放行静态网页资源 🌟
+                        // 这行解决了浏览器直接访问服务器 IP 时被拦截的问题
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/css/**", "/js/**", "/img/**", "/fonts/**").permitAll()
+
+                        // 允许所有用户访问图片资源
                         .requestMatchers("/media/**").permitAll()
 
                         // 登录/注册接口公开
