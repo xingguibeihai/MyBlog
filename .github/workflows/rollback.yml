@@ -1,0 +1,44 @@
+name: Manual Rollback (手动一键回滚)
+
+# 核心：定义手动触发器
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '请输入要回滚的目标版本号 (例如: v1.0)'
+        required: true
+        default: 'latest'
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. 远程 SSH 登录并执行回滚
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          # 将手动输入的 version 参数传递给脚本
+          envs: VERSION
+          script: |
+            VERSION=${{ github.event.inputs.version }}
+            cd /opt/MyBlog
+            
+            echo "开始回滚至版本: $VERSION ..."
+            
+            # 登录 Harbor 确保权限
+            docker login ${{ secrets.HARBOR_URL }} -u admin -p ${{ secrets.HARBOR_PASSWORD }}
+            
+            # 1. 直接拉取指定版本的镜像
+            docker pull ${{ secrets.HARBOR_URL }}/myblog-repo/myblog-backend:$VERSION
+            
+            # 2. 临时通过环境变量修改 docker-compose 运行的版本
+            # 这种方式不需要改动 docker-compose.yml 文件本身，非常优雅
+            export IMAGE_VERSION=$VERSION
+            docker-compose up -d backend
+            
+            echo "回滚成功！当前运行版本: $VERSION"
+            
+            # 清理虚悬镜像
+            docker image prune -f
