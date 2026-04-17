@@ -18,7 +18,6 @@ import java.util.Set;
 })
 public class User {
 
-    // ... (内部字段和方法保持不变)
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
